@@ -19,6 +19,7 @@ library(cowplot)
 library(ggnewscale)
 
 # Load data ---------------------------------------------------------------
+daphnia <- read.csv("data/DaphniaFull.csv") # Full daphnia dataset
 totaldaphnia1 <- read.csv("data/totaldaphnia1.csv") # Total daphnia dataset year 1
 totaldaphnia2 <- read.csv("data/totaldaphnia2.csv") # Total daphnia dataset year 2
 isotope_yr1 <- read.csv("data/isotope_yr1.csv") # Full porewater dataset year 1
@@ -133,9 +134,13 @@ plot_2a
 
 
 #### Year 2: ####
+totaldaphnia2 <- daphnia %>% 
+  filter(StudyYear == "Year2") %>% 
+  mutate(DensityRounded = round(total))
+
 P2b <- glmmTMB(
   DensityRounded ~ FishTreatment * BirdTreatment * Pre_Post +
-    MeanTempScaled + MeanDOScaled + MeanDepthScaled +
+    scale(MeanTemp) + scale(MeanDO) + scale(MeanDepth) +
     (1 | PlotID ) + (1 | SamplingOccasion),
   family = nbinom2,
   data = totaldaphnia2
@@ -299,11 +304,26 @@ summary(F3a)
 
 emm3a <- emmeans(F3a, ~ FishTreatment, type = "response")
 emm3a
+
 emm_df3a <- as.data.frame(emm3a)
 
+# Backtransform emmeans for reporting:
+min_val <- min(isotope_yr1_fish$C13PW)
+c_val <- 1 - min_val
+
+# Register transformation with emmeans
+emm3a_tran <- update(emm3a, tran = make.tran("genlog", c_val))
+
+# Regrid onto the response scale (delta-method SEs, not just exp() on endpoints):
+emm3a_resp <- regrid(emm3a_tran, transform = "response")
+emm3a_resp   
+
+# pull difference: difference, properly back-transformed
+pairs(emm3a_resp)
+
+# Back transform estimated marginal means for graphing CIs: 
 # backtransform response (log scale with slight offset):
 min_val <- min(isotope_yr1_fish$C13PW)
-
 emm_df3a$response <- exp(emm_df3a$emmean) + min_val - 1
 emm_df3a$lower    <- exp(emm_df3a$lower.CL) + min_val - 1
 emm_df3a$upper    <- exp(emm_df3a$upper.CL) + min_val - 1
@@ -474,9 +494,20 @@ F4a_1 <- lmer(logFlux ~ FishTreatment +
              (1 | PlotID) + (1 | SamplingOccasion),
            data = GHG_Yr1_post)
 
-emm4a_1 <- emmeans(F4a_1, ~ FishTreatment)
+emm4a_1 <- emmeans(F4a_1, ~ FishTreatment, type = "response")
 emm4a_1
-pairs(emm4a_1)
+pairs(emm4a_1, type = "response")
+
+## To pull out emmeans ratio from log-transformed response: 
+emm4a_1_tran <- update(emm4a_1, tran = "log")
+
+# Back-transformed group means:
+regrid(emm4a_1_tran, transform = "response")
+
+# Back-transformed ratio contrast:
+pairs(emm4a_1_tran, type = "response")
+
+
 emm_df4a_1 <- as.data.frame(emm4a_1)
 
 treatment_colors_4a1 <- c(

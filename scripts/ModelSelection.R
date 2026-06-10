@@ -18,15 +18,17 @@ library(DescTools)
 
 
 # Load data ---------------------------------------------------------------
-daphnia <- read.csv("DaphniaFull.csv") # Full daphnia dataset
+daphnia <- read.csv("data/DaphniaFull.csv") # Full daphnia dataset
 totaldaphnia1 <- read.csv("data/totaldaphnia1.csv") # Total daphnia dataset year 1
 totaldaphnia2 <- read.csv("data/totaldaphnia2.csv") # Total daphnia dataset year 2
+isotope <- read.csv("data/isotope.csv")
 isotope_yr1 <- read.csv("data/isotope_yr1.csv") # Full porewater dataset year 1
 isotope_yr2 <- read.csv("data/isotope_yr2.csv") # Full porewater dataset year 2
+GHG <- read.csv("data/GHG_ALL.csv") # full GHG dataset 
 GHG_Yr1 <- read.csv("data/GHG_Yr1_winter.csv") # Winter flooding methane dataset year 1
 GHG_Yr2 <- read.csv("data/GHG_Yr2_winter.csv") # Winter flooding methane dataset year 2
-GHG <- read.csv("data/GHG_ALL.csv") # full GHG dataset 
-
+hobo_summary <- read.csv("data/hobo_summary.csv") # Full water temperature/dissolved oxygen dataset 
+depth <- read.csv("data/depth_summary.csv") # Full depth dataset 
 
 # Model set 1: Daphnia Abundance ------------------------------------------
 
@@ -279,6 +281,7 @@ DaphniaYr2_M2 <- glmmTMB(
   family = nbinom2,
   data = totaldaphnia2
 )
+
 summary(DaphniaYr2_M2)
 
 anova(DaphniaYr2_M1, DaphniaYr2_M2) # chi-squared test is significant, p = 0.03
@@ -356,7 +359,21 @@ summary(DaphniaYr2_M8)
 
 anova(DaphniaYr2_M7, DaphniaYr2_M8) # chi-squared test not significant 
 
+
 #### Comparing Study Years ####
+daphnia$DensityRounded <- round(daphnia$total) 
+
+M_year <- glmmTMB(DensityRounded ~ StudyYear + 
+                    (1 | PlotID),
+                  family = nbinom2, 
+                  data = daphnia)
+summary(M_year)
+
+sim_M_year <- simulateResiduals(fittedModel = M_year)
+plot(sim_M_year)
+
+emm_year <- emmeans(M_year, ~ StudyYear)
+pairs(emm_year, type = "response", reverse = TRUE)
 
 
 
@@ -485,6 +502,23 @@ shapiro.test(resid(porewaterYr2_M5))
 # assumption: homoscedasticity
 check_heteroscedasticity(porewaterYr2_M5)
 
+#### Comparing Study Years ####
+isotope <- isotope %>% 
+  filter(FishOnField == "Y") %>% 
+  drop_na(C13PW) %>% 
+  mutate(C13_log = log(C13PW - min(C13PW) + 1))
+
+M_isotope_year <- lm(C13_log ~ FishTreatment*StudyYear,
+                  data = isotope)
+summary(M_isotope_year)
+
+shapiro.test(resid(M_isotope_year))
+par(mfrow = c(2, 2))
+plot(M_isotope_year)
+
+emm_isotope_year <- emmeans(M_isotope_year, ~ FishTreatment * StudyYear)
+pairs(emm_isotope_year, type = "response", reverse = TRUE)
+
 # Model set 3: Methane Flux -----------------------------------------------
 
 #### Year 1: Winter flux ####
@@ -499,7 +533,7 @@ GHG_Yr1_post <- GHG_Yr1 %>%
   filter(Pre_Post == "Post")
 
 ### Run ANOVA to ensure no differences pre- fish introduction: 
-anova_Yr1 <- aov(logFlux ~ FishTreatment*BirdTreatment, data = GHG_Yr1_pre)
+anova_Yr1 <- aov(logFlux ~ FishTreatment * BirdTreatment, data = GHG_Yr1_pre)
 summary(anova_Yr1) # no significance by treatment 
 
 # ANOVA diagnostics: 
@@ -798,3 +832,163 @@ shapiro.test(resid(AUCYr2_M5))
 # assumption: homoscedasticity
 check_heteroscedasticity(AUCYr2_M5)
 
+
+# Abiotic models  ---------------------------------------------------------
+## For all abiotic metrics, our hypotheses are that independent variables will not have treatment effects, but will exhibit differences by study year. 
+
+#### Water temperature ####
+
+## Full model to ensure no interactive treatment effects with study year: 
+temp_M1 <- lm(mean_temp ~ StudyYear * FishTreatment * BirdTreatment, data = hobo_summary)
+summary(temp_M1)
+
+# Diagnostics for most complex model: 
+par(mfrow = c(2,2))  # arrange in a 2x2 grid
+plot(temp_M1)
+
+## Model investigating interactive treatment effects & study year: 
+temp_M2 <- lm(mean_temp ~ (BirdTreatment * StudyYear) + (FishTreatment * StudyYear) + (FishTreatment * BirdTreatment), data = hobo_summary)
+summary(temp_M2)
+
+anova(temp_M1, temp_M2) # not significant, no interactive treatment effects. 
+
+temp_M3 <- lm(mean_temp ~ (BirdTreatment * StudyYear) + (FishTreatment * StudyYear), data = hobo_summary)
+summary(temp_M3)
+
+anova(temp_M2, temp_M3) # not significant
+
+temp_M4 <- lm(mean_temp ~ (FishTreatment * StudyYear) + BirdTreatment, data = hobo_summary)
+summary(temp_M4)
+
+anova(temp_M3, temp_M4) # not significant 
+
+temp_M5 <- lm(mean_temp ~ FishTreatment * StudyYear, data = hobo_summary)
+summary(temp_M5)
+
+anova(temp_M4, temp_M5) # not significant 
+
+temp_M6 <- lm(mean_temp ~ FishTreatment + StudyYear, data = hobo_summary)
+summary(temp_M6)
+
+anova(temp_M5, temp_M6) # not significant 
+
+temp_M7 <- lm(mean_temp ~ StudyYear, data = hobo_summary)
+summary(temp_M7)
+
+anova(temp_M6, temp_M7) # not significant 
+
+temp_M8 <- lm(mean_temp ~ 1, data = hobo_summary)
+summary(temp_M8)
+
+anova(temp_M7, temp_M8) # very significant 
+
+# Diagnostics for most complex model: 
+par(mfrow = c(2,2))  # arrange in a 2x2 grid
+plot(temp_M7)
+
+emm_temp <- emmeans(temp_M7, ~ StudyYear, type = "response")
+pairs(emm_temp)
+
+#### Dissolved oxygen ####
+## Full model to ensure no interactive treatment effects with study year: 
+DO_M1 <- lm(mean_DO ~ StudyYear * FishTreatment * BirdTreatment, data = hobo_summary)
+summary(DO_M1)
+
+# Diagnostics for most complex model: 
+par(mfrow = c(2,2))  # arrange in a 2x2 grid
+plot(DO_M1)
+
+## Model investigating interactive treatment effects & study year: 
+DO_M2 <- lm(mean_DO ~ (BirdTreatment * StudyYear) + (FishTreatment * StudyYear) + (FishTreatment * BirdTreatment), data = hobo_summary)
+summary(DO_M2)
+
+anova(DO_M1, DO_M2) # not significant, no interactive treatment effects. 
+
+DO_M3 <- lm(mean_DO ~ (BirdTreatment * StudyYear) + (FishTreatment * StudyYear), data = hobo_summary)
+summary(DO_M3)
+
+anova(DO_M2, DO_M3) # not significant
+
+DO_M4 <- lm(mean_DO ~ (FishTreatment * StudyYear) + BirdTreatment, data = hobo_summary)
+summary(DO_M4)
+
+anova(DO_M3, DO_M4) # significant 
+
+DO_M5 <- lm(mean_DO ~ FishTreatment * StudyYear, data = hobo_summary)
+summary(DO_M5)
+
+anova(DO_M4, DO_M5) # marginally significant 
+
+DO_M6 <- lm(mean_DO ~ FishTreatment + StudyYear, data = hobo_summary)
+summary(DO_M6)
+
+anova(DO_M5, DO_M6) # not significant 
+
+DO_M7 <- lm(mean_DO ~ StudyYear, data = hobo_summary)
+summary(DO_M7)
+
+anova(DO_M6, DO_M7) # not significant 
+
+DO_M8 <- lm(mean_DO ~ 1, data = hobo_summary)
+summary(DO_M8)
+
+anova(DO_M7, DO_M8) # very significant 
+
+# Diagnostics for most top model: 
+par(mfrow = c(2,2))  # arrange in a 2x2 grid
+plot(DO_M7)
+
+emm_DO <- emmeans(DO_M3, ~StudyYear, type = "response")
+pairs(emm_DO)
+
+#### Depth ####
+## Full model to ensure no interactive treatment effects with study year: 
+depth_M1 <- lm(mean_depth ~ StudyYear * FishTreatment * BirdTreatment, data = depth)
+summary(depth_M1)
+
+# Diagnostics for most complex model: 
+par(mfrow = c(2,2))  # arrange in a 2x2 grid
+plot(depth_M1)
+
+## Model investigating interactive treatment effects & study year: 
+depth_M2 <- lm(mean_depth ~ (BirdTreatment * StudyYear) + (FishTreatment * StudyYear) + (FishTreatment * BirdTreatment), data = depth)
+summary(depth_M2)
+
+anova(depth_M1, depth_M2) # not significant, no interactive treatment effects. 
+
+depth_M3 <- lm(mean_depth ~ (BirdTreatment * StudyYear) + (FishTreatment * StudyYear), data = depth)
+summary(depth_M3)
+
+anova(depth_M2, depth_M3) # not significant
+
+depth_M4 <- lm(mean_depth ~ (FishTreatment * StudyYear) + BirdTreatment, data = depth)
+summary(depth_M4)
+
+anova(depth_M3, depth_M4) # marginally significant 
+
+depth_M5 <- lm(mean_depth ~ FishTreatment * StudyYear, data = depth)
+summary(depth_M5)
+
+anova(depth_M4, depth_M5) # not significant 
+
+depth_M6 <- lm(mean_depth ~ FishTreatment + StudyYear, data = depth)
+summary(depth_M6)
+
+anova(depth_M5, depth_M6) # not significant 
+
+depth_M7 <- lm(mean_depth ~ StudyYear, data = depth)
+summary(depth_M7)
+
+anova(depth_M6, depth_M7) # not significant 
+
+depth_M8 <- lm(mean_depth ~ 1, data = depth)
+summary(depth_M8)
+
+anova(depth_M7, depth_M8) # very significant 
+
+# Diagnostics for most top model: 
+par(mfrow = c(2,2))  # arrange in a 2x2 grid
+plot(depth_M7)
+
+emm_depth <- emmeans(depth_M7, ~ StudyYear, type = "response")
+pairs(emm_depth)
