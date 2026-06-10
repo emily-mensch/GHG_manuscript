@@ -55,7 +55,7 @@ ca_inset <- ggplot() +
     aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
     fill = "red", color = "red", alpha = 0.3
   ) +
-  theme_void()  # strips axes/gridlines, like your example
+  theme_void()  
 
 ca_inset
 
