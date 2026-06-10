@@ -18,6 +18,7 @@ library(DescTools)
 
 
 # Load data ---------------------------------------------------------------
+daphnia <- read.csv("DaphniaFull.csv") # Full daphnia dataset
 totaldaphnia1 <- read.csv("data/totaldaphnia1.csv") # Total daphnia dataset year 1
 totaldaphnia2 <- read.csv("data/totaldaphnia2.csv") # Total daphnia dataset year 2
 isotope_yr1 <- read.csv("data/isotope_yr1.csv") # Full porewater dataset year 1
@@ -355,6 +356,9 @@ summary(DaphniaYr2_M8)
 
 anova(DaphniaYr2_M7, DaphniaYr2_M8) # chi-squared test not significant 
 
+#### Comparing Study Years ####
+
+
 
 # Model set 2: MOB estimation ---------------------------------------------
 
@@ -468,6 +472,8 @@ summary(porewaterYr2_M4)
 # Null model, compare fish and bird only models to this: 
 porewaterYr2_M5 <- lm(C13_log ~ 1, 
                        data = isotope_yr2_fish)
+summary(porewaterYr2_M5)
+
 anova(porewaterYr2_M3, porewaterYr2_M5) # chi-squared test not significant 
 anova(porewaterYr2_M4, porewaterYr2_M5) # chi-squared test not significant 
 
@@ -592,7 +598,7 @@ check_heteroscedasticity(anova_Yr2)
 
 # most complex model:
 methaneYr2_M1 <-  lmer(logFlux ~ FishTreatment * BirdTreatment +
-                      scale(MeanTemp) + scale(MeanDepth) + scale(Redox) +
+                         scale(MeanTemp) + scale(PO4) + scale(NH4) + scale(MeanDepth) +
                       (1 | PlotID) + (1 | SamplingOccasion),
                     data = GHG_Yr2_post)
 summary(methaneYr2_M1)
@@ -606,7 +612,7 @@ shapiro.test(resid(methaneYr2_M1))
 
 # drop treatment interaction: 
 methaneYr2_M2 <- lmer(logFlux ~ FishTreatment + BirdTreatment +
-                     scale(MeanTemp) + scale(MeanDepth) + scale(Redox) +
+                        scale(MeanTemp) + scale(PO4) + scale(NH4) + scale(MeanDepth) +
                      (1 | PlotID) + (1 | SamplingOccasion),
                    data = GHG_Yr2_post)
 
@@ -616,7 +622,7 @@ anova(methaneYr2_M1, methaneYr2_M2) # chi-squared test not significant
 
 # drop fish treatment: 
 methaneYr2_M3 <- lmer(logFlux ~ BirdTreatment + 
-                     scale(MeanTemp) + scale(MeanDepth) + scale(Redox) +
+                        scale(MeanTemp) + scale(PO4) + scale(NH4) + scale(MeanDepth) +
                      (1 | PlotID) + (1 | SamplingOccasion),
                    data = GHG_Yr2_post)
 
@@ -626,7 +632,7 @@ anova(methaneYr2_M2, methaneYr2_M3) # chi-squared test not significant
 
 # drop bird treatment: 
 methaneYr2_M4 <- lmer(logFlux ~ FishTreatment + 
-                     scale(MeanTemp) + scale(MeanDepth) + scale(Redox) +
+                        scale(MeanTemp) + scale(PO4) + scale(NH4) + scale(MeanDepth) +
                      (1 | PlotID) + (1 | SamplingOccasion),
                    data = GHG_Yr2_post)
 
@@ -634,7 +640,7 @@ summary(methaneYr2_M4)
 
 # null model: 
 methaneYr2_M5 <- lmer(logFlux ~ 1 +
-                     scale(MeanTemp) + scale(MeanDepth) + scale(Redox) +
+                     scale(MeanTemp) + scale(MeanDepth) + scale(PO4) + scale(NH4) +
                      (1 | PlotID) + (1 | SamplingOccasion),
                    data = GHG_Yr2_post)
 
