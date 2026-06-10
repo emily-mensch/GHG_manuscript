@@ -22,6 +22,9 @@ library(ggnewscale)
 zoop <- read.csv("data/TotalZoop.csv") # Full zooplankton dataset
 daphnia <- read.csv("data/DaphniaFull.csv") # Full daphnia dataset
 totaldaphnia1 <- read.csv("data/totaldaphnia1.csv") # Total daphnia dataset year 1
+hobo_summary <- read.csv("data/hobo_summary.csv") # Full water temperature/dissolved oxygen dataset 
+depth <- read.csv("data/depth_summary.csv") # Full depth dataset 
+birds <- read.csv("data/BirdPointCounts.csv") # Point count dataset
 
 # Figure S1 ---------------------------------------------------------------
 
@@ -432,4 +435,200 @@ ggsave("figures/Figure_S3.png",
        height = 11, 
        dpi = 300,
        units = "cm")
+
+
+# Figure S4 ---------------------------------------------------------------
+
+#### Abiotic data: 
+
+#### Water temperature ####
+
+hobo_summary$treatment <- as.factor(hobo_summary$treatment)
+
+hobo_summary <- hobo_summary %>%
+  mutate(treatment = factor(treatment, levels = c("Birds Fish", "NoBirds Fish", "Birds NoFish",
+                                                  "NoBirds NoFish")))
+
+
+treatment_colors_S4a <- c(
+  "Birds Fish"       = "#1B80ADFF",
+  "NoBirds Fish"     = "#00B398FF",
+  "Birds NoFish"    = "#FF9933FF",
+  "NoBirds NoFish"  = "#C24841FF"
+)
+
+plot_S4a <- ggplot(hobo_summary, aes(x = StudyYear, y = mean_temp, fill = treatment)) +
+  geom_boxplot(width = 0.5,
+               alpha = 0.7) +
+  scale_fill_manual(values = treatment_colors_S4a, name = "") +
+  theme_minimal_grid(font_size = 13) +
+  background_grid(major = c("xy"),
+                  minor = c("xy"),
+                  color.major = alpha("grey85", 0.4), 
+                  color.minor = alpha("grey85", 0.3) ) +
+  panel_border() +
+  scale_x_discrete(position = "top") +
+  labs(x = "", 
+       y = expression("Average Water Temperature" ~ degree*C)) +
+  ggtitle("StudyYear") +
+  theme(plot.title = element_text(hjust = 0.5, size = 12),
+        legend.position = "none") 
+
+
+plot_S4a
+
+
+#### Dissolved oxygen ####
+
+plot_S4b <- ggplot(hobo_summary, aes(x = StudyYear, y = mean_DO, fill = treatment)) +
+  geom_boxplot(width = 0.5,
+               alpha = 0.7) +
+  scale_fill_manual(values = treatment_colors_S4a, name = "") +
+  theme_minimal_grid(font_size = 13) +
+  background_grid(major = c("xy"),
+                  minor = c("xy"),
+                  color.major = alpha("grey85", 0.4), 
+                  color.minor = alpha("grey85", 0.3) ) +
+  panel_border() +
+  scale_x_discrete(position = "top") +
+  labs(x = "", 
+       y = expression("Average Dissolved Oxygen, mg/L")) +
+  ggtitle("") +
+  theme(axis.text.x = element_blank(),
+        legend.position = "none") 
+
+
+plot_S4b
+
+#### Water depth ####
+
+depth$treatment <- as.factor(depth$treatment)
+
+depth <- depth %>%
+  mutate(treatment = factor(treatment, levels = c("Birds Fish", "NoBirds Fish", "Birds NoFish",
+                                                  "NoBirds NoFish")))
+
+
+treatment_colors_S4c <- c(
+  "Birds Fish"       = "#1B80ADFF",
+  "NoBirds Fish"     = "#00B398FF",
+  "Birds NoFish"    = "#FF9933FF",
+  "NoBirds NoFish"  = "#C24841FF"
+)
+
+plot_S4c <- ggplot(depth, aes(x = StudyYear, y = mean_depth, fill = treatment)) +
+  geom_boxplot(width = 0.5,
+               alpha = 0.7) +
+  scale_fill_manual(values = treatment_colors_S4c, name = "") +
+  theme_minimal_grid(font_size = 13) +
+  background_grid(major = c("xy"),
+                  minor = c("xy"),
+                  color.major = alpha("grey85", 0.4), 
+                  color.minor = alpha("grey85", 0.3) ) +
+  panel_border() +
+  scale_x_discrete(position = "top") +
+  labs(x = "", 
+       y = expression("Average Depth, cm")) +
+  ggtitle("") +
+  theme(axis.text.x = element_blank(),
+        legend.position = "bottom",
+        legend.justification = "center") 
+
+plot_S4c
+
+#### Putting figures together:
+
+Figure_S4 <- plot_S4a / plot_S4b / plot_S4c
+
+# Save figure: 
+ggsave("figures/Figure_S4.png", 
+       plot = Figure_S4,
+       width = 16, 
+       height = 24, 
+       dpi = 300,
+       units = "cm")
+
+
+# Figure S5 ---------------------------------------------------------------
+
+#### Birds by year 
+birds_summary <- birds %>% 
+  group_by(PlotNumber, StudyYear, Treatment) %>%
+  summarise(MeanPresence = mean(PiscPresenceAbsence))
+
+
+# Final model: additive effects of fish and pre/post 
+P_S5 <- glmmTMB(PiscPresenceAbsence ~ Treatment + StudyYear +
+                   scale(MeanDepth) +
+                   (1 | PlotNumber ),
+                 family = binomial,
+                 data = birds)
+
+summary(P_S5)
+
+emmS5 <- emmeans(P_S5, ~ StudyYear,
+                  type = "response")
+
+
+emm_df_S5 <- as.data.frame(emmS5)
+
+treatment_colors_S5 <- c(
+  "Fish"    = "#1B80ADFF",
+  "NoFish"  = "#FF9933FF"
+)
+
+plot_S5 <- ggplot() +
+  geom_quasirandom( 
+    data = birds_summary, aes(x = StudyYear, y = MeanPresence, 
+                       color = Treatment),
+    width = 0.2, alpha = 0.5, size = 1.5
+  ) +
+  scale_color_manual(values = treatment_colors_S5, name = "Treatment") + 
+  new_scale_color() +
+  geom_line(
+    data = emm_df_S5, aes(x = StudyYear, y = prob, group = 1) ,
+    color = "black",
+    linewidth = 0.5,
+    alpha = 0.5
+  ) +
+  geom_point(
+    data = emm_df_S5, aes(x = StudyYear, y = prob),
+    color = "black",
+    size = 3.5,
+    alpha = 0.6
+  ) +
+  geom_errorbar(
+    data = emm_df_S5, aes(x = StudyYear, ymin = asymp.LCL, ymax = asymp.UCL),
+    color = "black",
+    width = 0.15,
+    alpha = 0.5
+  ) +
+  labs(x = "", 
+       y = expression("Probability of Bird Presence")) +
+  ggtitle("") +
+  theme_minimal_grid(font_size = 13) +
+  background_grid(major = c("xy"),
+                  minor = c("xy"),
+                  color.major = alpha("grey85", 0.4), 
+                  color.minor = alpha("grey85", 0.3) ) +
+  panel_border() +
+  scale_x_discrete(position = "top") +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    legend.justification = "center") +
+  geom_text(aes(x = 1.5, y = 0.09, 
+                label = "*"), 
+            size = 7)
+
+plot_S5
+
+# Save figure: 
+ggsave("figures/Figure_S5.png", 
+       plot = plot_S5,
+       width = 11, 
+       height = 11, 
+       dpi = 300,
+       units = "cm",
+       bg = "white")
 

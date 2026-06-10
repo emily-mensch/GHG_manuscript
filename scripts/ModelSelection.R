@@ -31,6 +31,7 @@ GHG_Yr1 <- read.csv("data/GHG_Yr1_winter.csv") # Winter flooding methane dataset
 GHG_Yr2 <- read.csv("data/GHG_Yr2_winter.csv") # Winter flooding methane dataset year 2
 hobo_summary <- read.csv("data/hobo_summary.csv") # Full water temperature/dissolved oxygen dataset 
 depth <- read.csv("data/depth_summary.csv") # Full depth dataset 
+birds <- read.csv("data/BirdPointCounts.csv") # Point count dataset
 
 # Model set 1: Zooplankton Abundance ------------------------------------------
 
@@ -716,22 +717,6 @@ shapiro.test(resid(porewaterYr2_M5))
 # assumption: homoscedasticity
 check_heteroscedasticity(porewaterYr2_M5)
 
-#### Comparing Study Years ####
-isotope <- isotope %>% 
-  filter(FishOnField == "Y") %>% 
-  drop_na(C13PW) %>% 
-  mutate(C13_log = log(C13PW - min(C13PW) + 1))
-
-M_isotope_year <- lm(C13_log ~ FishTreatment*StudyYear,
-                  data = isotope)
-summary(M_isotope_year)
-
-shapiro.test(resid(M_isotope_year))
-par(mfrow = c(2, 2))
-plot(M_isotope_year)
-
-emm_isotope_year <- emmeans(M_isotope_year, ~ FishTreatment * StudyYear)
-pairs(emm_isotope_year, type = "response", reverse = TRUE)
 
 # Model set 3: Methane Flux -----------------------------------------------
 
@@ -977,7 +962,7 @@ shapiro.test(resid(AUCYr1_M4))
 check_heteroscedasticity(AUCYr1_M4)
 
 #### Year 2: Total year ####
-# Get full year 1 data: 
+# Get full year 2 data: 
 GHGYr2_Full <- GHG %>%
   filter(StudyYear == "Year2")
 
@@ -1047,7 +1032,7 @@ shapiro.test(resid(AUCYr2_M5))
 check_heteroscedasticity(AUCYr2_M5)
 
 
-# Study Year comparisons  ---------------------------------------------------------
+# Study Year comparisons v1  ---------------------------------------------------------
 
 #### Daphnia ####
 daphnia$DensityRounded <- round(daphnia$total) 
@@ -1362,3 +1347,139 @@ plot(depth_M7)
 
 emm_depth <- emmeans(depth_M7, ~ StudyYear, type = "response")
 pairs(emm_depth)
+
+
+# Study Year comparisons v2  ----------------------------------------------
+
+#### Bird presence ####
+birds_year <- glmmTMB(PiscPresenceAbsence ~ StudyYear +
+                        scale(MeanDepth) +
+                (1 | PlotNumber ),
+              family = binomial,
+              data = birds)
+summary(birds_year)
+
+sim_birds_year <- simulateResiduals(fittedModel = birds_year)
+plot(sim_birds_year)
+check_overdispersion(birds_year)
+
+#### Total zooplankton ####
+zoop$DensityRounded <- round(zoop$total) 
+
+zoop_year <- glmmTMB(DensityRounded ~ StudyYear + 
+                          scale(MeanTemp) + scale(MeanDO) + scale(MeanDepth) +
+                          (1 | PlotID),
+                        family = nbinom2, 
+                        data = zoop)
+summary(zoop_year)
+
+sim_zoop_year <- simulateResiduals(fittedModel = zoop_year)
+plot(sim_zoop_year)
+check_overdispersion(zoop_year)
+check_collinearity(zoop_year)
+
+#### Daphnia abundance ####
+daphnia$DensityRounded <- round(daphnia$total) 
+
+daphnia_year <- glmmTMB(DensityRounded ~ StudyYear + 
+                     scale(MeanTemp) + scale(MeanDO) + scale(MeanDepth) +
+                     (1 | PlotID),
+                   family = nbinom2, 
+                   data = daphnia)
+summary(daphnia_year)
+
+sim_M_year <- simulateResiduals(fittedModel = daphnia_year)
+plot(sim_M_year)
+check_overdispersion(daphnia_year)
+check_collinearity(daphnia_year)
+
+#### MOB ####
+
+isotope <- isotope %>% 
+  filter(FishOnField == "Y") %>% 
+  drop_na(C13PW) %>% 
+  mutate(C13_log = log(C13PW - min(C13PW) + 1))
+
+M_isotope_year <- lm(C13_log ~ StudyYear,
+                     data = isotope)
+summary(M_isotope_year)
+
+shapiro.test(resid(M_isotope_year))
+par(mfrow = c(2, 2))
+plot(M_isotope_year)
+
+#### Winter CH4 ####
+GHG_post <- GHG %>% 
+  filter(Pre_Post == "Post")
+
+methane_year1 <- lmer(logFlux ~ StudyYear + 
+                        scale(MeanTemp) +  scale(MeanDO) + scale(MeanDepth) + 
+                        scale(PO4) + scale(NH4) + 
+                        (1 | PlotID) ,
+                      data = GHG_post)
+summary(methane_year1)
+
+sim_methane_year <- simulateResiduals(fittedModel = methane_year1)
+plot(sim_methane_year)
+check_collinearity(methane_year1)
+
+#### Annual CH4 ####
+
+# Transform units to be in kg/ha
+GHG_Full <- GHG %>%
+  mutate(CH4Flux_kg_ha_h = CH4Flux * 0.00057744,       # nmol/m2/s -> kg/ha/h
+         CH4Flux_kg_ha_day = CH4Flux_kg_ha_h * 24)     # kg/ha/h -> kg/ha/day
+
+# Calculate area under the curve over time (elapsed days of experiment): 
+results <- GHG_Full %>% 
+  group_by(FishTreatment, BirdTreatment, treatment, PlotID, StudyYear) %>% 
+  summarise(
+    auc_total = AUC(x = ElapsedDays, y = CH4Flux_kg_ha_day, method = "trapezoid"),
+    time_range = max(ElapsedDays) - min(ElapsedDays),
+    mean_flux = auc_total / time_range, 
+    .groups = "drop"
+  )
+
+AUC_year <- lm(mean_flux ~ StudyYear,
+                data = results)
+summary(AUC_year)
+
+# diagnostics for most complex model: 
+par(mfrow = c(2, 2))
+plot(AUC_year)
+# assumption: normality 
+shapiro.test(resid(AUC_year))
+# assumption: homoscedasticity
+check_heteroscedasticity(AUC_year)
+
+#### Water temperature ####
+temp <- lmer(mean_temp ~ StudyYear + (1 | PlotID), 
+           data = hobo_summary)
+summary(temp)
+
+sim_temp_year <- simulateResiduals(fittedModel = temp)
+plot(sim_temp_year)
+
+#### Dissolved oxygen ####
+DO <- lmer(mean_DO ~ StudyYear + (1 | PlotID), 
+             data = hobo_summary)
+summary(DO)
+
+sim_DO_year <- simulateResiduals(fittedModel = DO)
+plot(sim_DO_year)
+
+#### Depth ####
+depth_year <- lm(mean_depth ~ StudyYear, 
+           data = depth)
+summary(depth_year)
+
+par(mfrow = c(2,2))  # arrange in a 2x2 grid
+plot(depth_year)
+
+
+
+
+
+
+
+

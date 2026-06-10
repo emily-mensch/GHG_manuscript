@@ -159,6 +159,15 @@ plot_2a <- ggplot() +
 
 plot_2a
 
+## Save for AFS:
+# Save figure: 
+ggsave("figures/Figure_2a_AFS.png", 
+       plot = plot_2a,
+       width = 11, 
+       height = 11, 
+       dpi = 300,
+       units = "cm",
+       bg = "white")
 
 #### Year 2: ####
 totaldaphnia2 <- daphnia %>% 
@@ -278,6 +287,15 @@ plot_2b <- ggplot() +
 
 plot_2b
 
+## Save for AFS:
+ggsave("figures/Figure_2b_AFS.png", 
+       plot = plot_2b,
+       width = 11, 
+       height = 11, 
+       dpi = 300,
+       units = "cm",
+       bg = "white")
+
 #### Put figures together: 
 
 legend_grob <- get_legend(plot_2b)  # extract legend from plot 2b
@@ -301,6 +319,14 @@ Figure2
 ggsave("figures/Figure_2.png", 
        plot = Figure2,
        width = 20, 
+       height = 18, 
+       dpi = 300,
+       units = "cm")
+
+# Save figure for AFS:
+ggsave("figures/Figure_2_AFS.png", 
+       plot = Figure2,
+       width = 40, 
        height = 18, 
        dpi = 300,
        units = "cm")
@@ -585,6 +611,16 @@ plot_4a1 <- ggplot() +
 
 plot_4a1
 
+## Save for AFS:
+# Save figure: 
+ggsave("figures/Figure_4a_AFS.png", 
+       plot = plot_4a1,
+       width = 9, 
+       height = 9, 
+       dpi = 300,
+       units = "cm",
+       bg = "white")
+
 #### Year 2: ####
 
 # set up for figure:
@@ -642,6 +678,17 @@ plot_4a2 <- ggplot() +
   scale_x_discrete(position = "top")
 
 plot_4a2
+
+## Save for AFS:
+# Save figure: 
+ggsave("figures/Figure_4a2_AFS.png", 
+       plot = plot_4a2,
+       width = 9, 
+       height = 9, 
+       dpi = 300,
+       units = "cm",
+       bg = "white")
+
 
 #### Total Annual flux ####
 
