@@ -833,8 +833,164 @@ shapiro.test(resid(AUCYr2_M5))
 check_heteroscedasticity(AUCYr2_M5)
 
 
-# Abiotic models  ---------------------------------------------------------
-## For all abiotic metrics, our hypotheses are that independent variables will not have treatment effects, but will exhibit differences by study year. 
+# Study Year comparisons  ---------------------------------------------------------
+
+#### Daphnia ####
+daphnia$DensityRounded <- round(daphnia$total) 
+
+daphnia_post <- daphnia %>% 
+  filter(Pre_Post == "Post")
+
+M_year1 <- glmmTMB(DensityRounded ~ FishTreatment*BirdTreatment*StudyYear + 
+                     scale(MeanTemp) + scale(MeanDO) + scale(MeanDepth) +
+                     (1 | PlotID),
+                   family = nbinom2, 
+                   data = daphnia_post)
+summary(M_year1)
+
+sim_M_year <- simulateResiduals(fittedModel = M_year1)
+plot(sim_M_year)
+
+M_year2 <- glmmTMB(DensityRounded ~ (FishTreatment*StudyYear) + (BirdTreatment*StudyYear) + (FishTreatment*BirdTreatment) +
+                     scale(MeanTemp) + scale(MeanDO) + scale(MeanDepth) +
+                     (1 | PlotID),
+                   family = nbinom2, 
+                   data = daphnia_post)
+summary(M_year2)
+
+anova(M_year1, M_year2) # not significant 
+
+M_year3 <- glmmTMB(DensityRounded ~ (FishTreatment*StudyYear) + (BirdTreatment*StudyYear) +
+                     scale(MeanTemp) + scale(MeanDO) + scale(MeanDepth) +
+                     (1 | PlotID),
+                   family = nbinom2, 
+                   data = daphnia_post)
+summary(M_year3)
+
+anova(M_year2, M_year3) # not significant 
+
+M_year4 <- glmmTMB(DensityRounded ~ (FishTreatment*StudyYear) + BirdTreatment +
+                     scale(MeanTemp) + scale(MeanDO) + scale(MeanDepth) +
+                     (1 | PlotID),
+                   family = nbinom2, 
+                   data = daphnia_post)
+summary(M_year4)
+
+anova(M_year3, M_year4) # not significant 
+
+M_year5 <- glmmTMB(DensityRounded ~ (FishTreatment*StudyYear) + 
+                     scale(MeanTemp) + scale(MeanDO) + scale(MeanDepth) +
+                     (1 | PlotID),
+                   family = nbinom2, 
+                   data = daphnia_post)
+summary(M_year5)
+
+anova(M_year4, M_year5) # not significant 
+
+M_year6 <- glmmTMB(DensityRounded ~ (FishTreatment + StudyYear) + 
+                     scale(MeanTemp) + scale(MeanDO) + scale(MeanDepth) +
+                     (1 | PlotID),
+                   family = nbinom2, 
+                   data = daphnia_post)
+summary(M_year6)
+
+anova(M_year5, M_year6) # not significant 
+
+M_year7 <- glmmTMB(DensityRounded ~ StudyYear + 
+                     scale(MeanTemp) + scale(MeanDO) + scale(MeanDepth) +
+                     (1 | PlotID),
+                   family = nbinom2, 
+                   data = daphnia_post)
+summary(M_year7)
+
+anova(M_year6, M_year7) # not significant 
+
+M_year8 <- glmmTMB(DensityRounded ~ 
+                     scale(MeanTemp) + scale(MeanDO) + scale(MeanDepth) +
+                     (1 | PlotID),
+                   family = nbinom2, 
+                   data = daphnia_post)
+summary(M_year8)
+
+anova(M_year7, M_year8) # very significant 
+
+#### MOB estimation ####
+
+
+#### Methane: winter flux ####
+GHG_post <- GHG %>% 
+  filter(Pre_Post == "Post")
+
+methane_year1 <- lmer(logFlux ~ FishTreatment*BirdTreatment*StudyYear + 
+                        scale(MeanTemp) + scale(PO4) + scale(NH4) + scale(MeanDepth) + scale(MeanDO) +
+                        (1 | PlotID) ,
+                      data = GHG_post)
+summary(methane_year1)
+
+sim_methane_year <- simulateResiduals(fittedModel = methane_year1)
+plot(sim_methane_year)
+check_collinearity(methane_year1)
+
+methane_year2 <- lmer(logFlux ~ (FishTreatment*StudyYear) + (BirdTreatment*StudyYear) + (FishTreatment*BirdTreatment) +
+                        scale(MeanTemp) + scale(PO4) + scale(NH4) + scale(MeanDepth) + scale(MeanDO) +
+                        (1 | PlotID),
+                      data = GHG_post)
+summary(methane_year2)
+
+anova(methane_year1, methane_year2) # marginally significant 
+
+methane_year3 <- lmer(logFlux ~ (FishTreatment*StudyYear) + (BirdTreatment*StudyYear) +
+                        scale(MeanTemp) + scale(PO4) + scale(NH4) + scale(MeanDepth) + scale(MeanDO) +
+                        (1 | PlotID),
+                      data = GHG_post)
+summary(methane_year3)
+
+anova(methane_year2, methane_year3) # not significant 
+
+methane_year4 <- lmer(logFlux ~ (FishTreatment*StudyYear) + BirdTreatment +
+                        scale(MeanTemp) + scale(PO4) + scale(NH4) + scale(MeanDepth) + scale(MeanDO) +
+                        (1 | PlotID),
+                      data = GHG_post)
+summary(methane_year4)
+
+anova(methane_year3, methane_year4) # not significant 
+
+methane_year5 <- lmer(logFlux ~ (FishTreatment*StudyYear) + 
+                        scale(MeanTemp) + scale(PO4) + scale(NH4) + scale(MeanDepth) + scale(MeanDO) +
+                        (1 | PlotID),
+                      data = GHG_post)
+summary(methane_year5)
+
+sim_M5 <- simulateResiduals(fittedModel = methane_year5)
+plot(sim_M5)
+check_collinearity(methane_year5)
+
+anova(methane_year4, methane_year5) # not significant 
+
+methane_year6 <- lmer(logFlux ~ (FishTreatment + StudyYear) + 
+                        scale(MeanTemp) + scale(PO4) + scale(NH4) + scale(MeanDepth) + scale(MeanDO) +
+                        (1 | PlotID),
+                      data = GHG_post)
+summary(methane_year6)
+
+anova(methane_year5, methane_year6) # significant, p = 0.030*
+
+methane_year7 <- lmer(logFlux ~ StudyYear + 
+                        scale(MeanTemp) + scale(PO4) + scale(NH4) + scale(MeanDepth) + scale(MeanDO) +
+                        (1 | PlotID),
+                      data = GHG_post)
+summary(methane_year7)
+
+anova(methane_year6, methane_year7) # not significant 
+
+methane_year8 <- lmer(logFlux ~ 
+                        scale(MeanTemp) + scale(PO4) + scale(NH4) + scale(MeanDepth) + scale(MeanDO) +
+                        (1 | PlotID),
+                      data = GHG_post)
+summary(methane_year8)
+
+anova(methane_year7, methane_year8) # not significant 
+
 
 #### Water temperature ####
 

@@ -17,6 +17,9 @@ library(ggbeeswarm)
 library(patchwork)
 library(cowplot)
 library(ggnewscale)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthhires)
 
 # Load data ---------------------------------------------------------------
 daphnia <- read.csv("data/DaphniaFull.csv") # Full daphnia dataset
@@ -31,6 +34,9 @@ GHG <- read.csv("data/GHG_ALL.csv") # full GHG dataset
 
 # Figure 1 ----------------------------------------------------------------
 
+## Creating map of study site: 
+# Get US states, then filter to CA: 
+us_states <- ne_states(country = "United States of America", returnclass = "sf")
 
 # Figure 2 ----------------------------------------------------------------
 
