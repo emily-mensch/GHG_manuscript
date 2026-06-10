@@ -68,7 +68,7 @@ emm_df2a <- emm_df2a %>%
     FishTreatment = recode(FishTreatment, "NoFish" = "No Fish"))
 
 
-treatment_colors <- c(
+treatment_colors_2a <- c(
   "Birds Fish"    = "#1B80ADFF",
   "NoBirds Fish"  = "#00B398FF",  
   "Birds NoFish"  = "#FF9933FF",  
@@ -88,7 +88,7 @@ plot_2a <- ggplot() +
                      color = treatment),
     width = 0.2, alpha = 0.5, size = 1.5
   ) +
-  scale_color_manual(values = treatment_colors, name = "Treatment") + 
+  scale_color_manual(values = treatment_colors_2a, name = "Treatment") + 
   new_scale_color() +
   geom_line(
     data = emm_df2a, aes(x = Pre_Post, y = response,
@@ -162,9 +162,9 @@ emm_df2b <- emm_df2b %>%
     FishTreatment = recode(FishTreatment, "NoFish" = "No Fish")
   )
 
-treatment_order <- c("Fish_Birds", "Fish_NoBirds", "No Fish_Birds", "No Fish_NoBirds")
+treatment_order_2b <- c("Fish_Birds", "Fish_NoBirds", "No Fish_Birds", "No Fish_NoBirds")
 
-treatment_colors_b <- c(
+treatment_colors_2b <- c(
   "Fish_Birds"       = "#1B80ADFF",
   "Fish_NoBirds"     = "#00B398FF",
   "No Fish_Birds"    = "#FF9933FF",
@@ -181,12 +181,12 @@ label_df2b <- data.frame(
 dat2b <- dat2b %>%
   mutate(color_group = factor(
     interaction(FishTreatment, BirdTreatment, sep = "_"),
-    levels = treatment_order))
+    levels = treatment_order_2b))
 
 emm_df2b <- emm_df2b %>%
   mutate(color_group = factor(
     interaction(FishTreatment, BirdTreatment, sep = "_"),
-    levels = treatment_order))
+    levels = treatment_order_2b))
 
 plot_2b <- ggplot() +
   geom_quasirandom( 
@@ -196,7 +196,7 @@ plot_2b <- ggplot() +
   geom_line(
     data = emm_df2b,
     aes(x = Pre_Post, y = response, color = color_group, group = color_group),
-    linewidth = 0.5, position = position_dodge(width = 0.3)
+    linewidth = 0.5, position = position_dodge(width = 0.5)
   ) +
   geom_point(
     data = emm_df2b, aes(x = Pre_Post, y = response, color = color_group),
@@ -205,11 +205,11 @@ plot_2b <- ggplot() +
   geom_errorbar(
     data = emm_df2b, aes(x = Pre_Post, ymin = asymp.LCL, ymax = asymp.UCL,
                         color = color_group),
-    width = 0.15, position = position_dodge(width = 0.3)
+    width = 0.15, position = position_dodge(width = 0.5)
   ) +
   facet_wrap(~FishTreatment, strip.position = "top") +
   scale_color_manual(
-    values = treatment_colors_b,
+    values = treatment_colors_2b,
     name = "Treatment",
     labels = c(
       "Fish_Birds"     = "Fish / Birds",
@@ -308,6 +308,13 @@ emm_df3a$response <- exp(emm_df3a$emmean) + min_val - 1
 emm_df3a$lower    <- exp(emm_df3a$lower.CL) + min_val - 1
 emm_df3a$upper    <- exp(emm_df3a$upper.CL) + min_val - 1
 
+treatment_colors_3a <- c(
+  "Birds Fish"    = "#1B80ADFF",
+  "NoBirds Fish"  = "#00B398FF",  
+  "Birds NoFish"  = "#FF9933FF",  
+  "NoBirds NoFish"= "#C24841FF"
+)
+
 # Year 1 plot:
 plot_3a <- ggplot() +
   geom_jitter(data = isotope_yr1_fish,
@@ -315,7 +322,7 @@ plot_3a <- ggplot() +
               width = 0.1,
               alpha = 0.5, 
               size = 2) +
-  scale_color_manual(values = treatment_colors, name = "Treatment") +
+  scale_color_manual(values = treatment_colors_3a, name = "Treatment") +
   new_scale_color() +
   geom_point(
     data = emm_df3a, aes(x = FishTreatment, y = response),
@@ -363,9 +370,9 @@ isotope_yr2_fish <- isotope_yr2_fish %>%
   mutate(C13_log = log(C13PW - min(C13PW) + 1),
          FishTreatment = recode(FishTreatment, "NoFish" = "No Fish"))
 
-treatment_order <- c("Birds Fish", "NoBirds Fish", "Birds NoFish", "NoBirds NoFish")
+treatment_order_3b <- c("Birds Fish", "NoBirds Fish", "Birds NoFish", "NoBirds NoFish")
 
-treatment_colors_b <- c(
+treatment_colors_3b <- c(
   "Birds Fish"       = "#1B80ADFF",
   "NoBirds Fish"     = "#00B398FF",
   "Birds NoFish"    = "#FF9933FF",
@@ -375,7 +382,7 @@ treatment_colors_b <- c(
 dat3b <- isotope_yr2_fish %>%
   mutate(color_group = factor(
     treatment,
-    levels = treatment_order))
+    levels = treatment_order_3b))
 
 plot_3b <- ggplot() +
   geom_jitter(data = dat3b,
@@ -406,7 +413,7 @@ plot_3b <- ggplot() +
       linetype = 0,
       linewidth = 0,
       alpha = 1))) +
-  scale_color_manual(values = treatment_colors_b, 
+  scale_color_manual(values = treatment_colors_3b, 
                      name = "Treatment",
                      labels = c(
                        "Birds Fish"     = "Fish / Birds",
@@ -425,7 +432,7 @@ plot_3b
 
 legend_grob <- get_legend(plot_3b)  # extract legend from plot 3b
 
-# Remove legends from ndividual plots
+# Remove legends from individual plots
 plot_3a_noleg <- plot_3a + theme(legend.position = "none")
 plot_3b_noleg <- plot_3b + theme(legend.position = "none")
 
@@ -450,6 +457,560 @@ ggsave("figures/Figure_3.png",
 
 
 # Figure 4 ----------------------------------------------------------------
+
+#### Instantaneous flux ####
+
+#### Year 1: ####
+
+# set up for model: 
+GHG_Yr1_post <- GHG_Yr1 %>% 
+  filter(Pre_Post == "Post") %>% 
+  mutate(FishTreatment = recode(FishTreatment, "NoFish" = "No Fish"))
+
+# top model: 
+
+F4a_1 <- lmer(logFlux ~ FishTreatment + 
+             scale(MeanTemp) + scale(PO4) + scale(NH4) + scale(MeanDepth) +
+             (1 | PlotID) + (1 | SamplingOccasion),
+           data = GHG_Yr1_post)
+
+emm4a_1 <- emmeans(F4a_1, ~ FishTreatment)
+emm4a_1
+pairs(emm4a_1)
+emm_df4a_1 <- as.data.frame(emm4a_1)
+
+treatment_colors_4a1 <- c(
+  "Birds Fish"    = "#1B80ADFF",
+  "NoBirds Fish"  = "#00B398FF",  
+  "Birds NoFish"  = "#FF9933FF",  
+  "NoBirds NoFish"= "#C24841FF"
+)
+
+# Plot: 
+
+plot_4a1 <- ggplot() +
+  geom_jitter(data = GHG_Yr1_post,
+              aes(x = FishTreatment, y = logFlux, color = treatment),
+              width = 0.1,
+              alpha = 0.5,
+              size = 2) +
+  scale_color_manual(values = treatment_colors_4a1, name = "Treatment") +
+  new_scale_color() +
+  geom_point(data = emm_df4a_1, aes(x = FishTreatment, y = emmean),
+             color = "black",
+             size = 3.5,
+             alpha = 0.6) +
+  geom_errorbar(data = emm_df4a_1,
+                aes(x = FishTreatment,
+                    ymin = lower.CL,
+                    ymax = upper.CL),
+                color = "black",
+                width = 0.15,
+                alpha = 0.5) +
+  labs(title = "Winter Flooded Season Flux",
+       y = expression(Log~C~-CH[4]~flux~(nmol~m^{-2}~s^{-1})),
+       x = "") +
+  theme_minimal_grid(font_size = 12) +
+  background_grid(major = c("xy"),
+                  minor = c("xy"),
+                  color.major = alpha("grey85", 0.4), 
+                  color.minor = alpha("grey85", 0.3)) +
+  panel_border() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 11),
+    legend.position = "none") +
+  ylim(-0.5, 9) +
+  geom_text(aes(x = 1.5, y = 9, 
+                label = "**"), 
+            size = 6) +
+  scale_x_discrete(position = "top")
+
+plot_4a1
+
+#### Year 2: ####
+
+# set up for figure:
+## (Year 2 top model is null model - showing raw data:)
+GHG_Yr2_post <- GHG_Yr2 %>% 
+  filter(Pre_Post == "Post") %>% 
+  mutate(FishTreatment = recode(FishTreatment, "NoFish" = "No Fish"))
+
+treatment_order_4a2 <- c("Birds Fish", "NoBirds Fish", "Birds NoFish", "NoBirds NoFish")
+
+treatment_colors_4a2 <- c(
+  "Birds Fish"       = "#1B80ADFF",
+  "NoBirds Fish"     = "#00B398FF",
+  "Birds NoFish"    = "#FF9933FF",
+  "NoBirds NoFish"  = "#C24841FF"
+)
+
+dat4a2 <- GHG_Yr2_post %>%
+  mutate(color_group = factor(
+    treatment,
+    levels = treatment_order_4a2))
+
+# Plot: 
+
+plot_4a2 <- ggplot() +
+  geom_jitter(data = dat4a2,
+              aes(x = FishTreatment, y = logFlux, color = color_group),
+              width = 0.1,
+              alpha = 0.5,
+              size = 2) +
+  labs(title = "Winter Flooded Season Flux",
+       y = expression(Log~C~-CH[4]~flux~(nmol~m^{-2}~s^{-1})),
+       x = "") +
+  theme_minimal_grid(font_size = 12) +
+  background_grid(major = c("xy"),
+                  minor = c("xy"),
+                  color.major = alpha("grey85", 0.4), 
+                  color.minor = alpha("grey85", 0.3) ) +
+  panel_border() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 11),
+    legend.position = "none") +
+  ylim(-0.5,9) +
+  scale_color_manual(values = treatment_colors_4a2, 
+                     name = "Treatment",
+                     labels = c(
+                       "Birds Fish"     = "Fish / Birds",
+                       "NoBirds Fish"   = "Fish / No Birds",
+                       "Birds NoFish"   = "No Fish / Birds",
+                       "NoBirds NoFish" = "No Fish / No Birds"
+                     )) +
+  geom_text(aes(x = 1.5, y = 9, 
+                label = "n.s."), 
+            size = 4) +
+  scale_x_discrete(position = "top")
+
+plot_4a2
+
+#### Total Annual flux ####
+
+#### Year 1: ####
+
+# Set up for modeling: 
+
+# Filter out for study year 1:
+GHGYr1_Full <- GHG %>%
+  filter(StudyYear == "Year1")
+
+# Transform units to kg/ha/day
+GHGYr1_Full <- GHGYr1_Full %>%
+  mutate(CH4Flux_kg_ha_h = CH4Flux * 0.00057744, # nmol/m2/s -> kg/ha/h
+         CH4Flux_kg_ha_day = CH4Flux_kg_ha_h * 24) # kg/ha/h -> kg/ha/day
+
+results1 <- GHGYr1_Full %>% 
+  group_by(FishTreatment, BirdTreatment, treatment, PlotID) %>% 
+  summarise(
+    auc_total = AUC(x = ElapsedDays, y = CH4Flux_kg_ha_day, method = "trapezoid"),
+    time_range = max(ElapsedDays) - min(ElapsedDays),
+    mean_flux = auc_total / time_range, 
+    .groups = "drop"
+  ) %>% 
+  mutate(FishTreatment = recode(FishTreatment, "NoFish" = "No Fish"))
+
+# Top model: 
+
+F4b_1 <- lm(mean_flux ~ FishTreatment, 
+            data = results1)
+
+emm4b1 <- emmeans(F4b_1, ~ FishTreatment, type = "response")
+emm4b1
+pairs(emm4b1)
+emm_df_4b1 <- as.data.frame(emm4b1)
+
+
+treatment_colors_4b1 <- c(
+  "Birds Fish"    = "#1B80ADFF",
+  "NoBirds Fish"  = "#00B398FF",  
+  "Birds NoFish"  = "#FF9933FF",  
+  "NoBirds NoFish"= "#C24841FF"
+)
+
+# Plot: 
+plot_4b1 <- ggplot() +
+  geom_jitter(data = results1,
+              aes(x = FishTreatment, y = mean_flux, color = treatment),
+              width = 0.1,
+              alpha = 0.5,
+              size = 2) +
+  scale_color_manual(values = treatment_colors_4b1, name = "Treatment") +
+  new_scale_color() +
+  geom_point(data = emm_df_4b1,
+             aes(x = FishTreatment, y = emmean),
+             color = "black",
+             size = 3,
+             alpha = 0.6) +
+  geom_errorbar(data = emm_df_4b1,
+                aes(x = FishTreatment,
+                    ymin = lower.CL,
+                    ymax = upper.CL),
+                color = "black",
+                width = 0.15,
+                alpha = 0.5) +
+  labs( 
+    title = "Total Annual Emissions",
+    x = "",
+    y = expression(Cumulative~C~-CH[4]~emissions~(kg~ha^{-1}))
+  ) +
+  theme_minimal_grid(font_size = 12) +
+  background_grid(major = c("xy"),
+                  minor = c("xy"),
+                  color.major = alpha("grey85", 0.4), 
+                  color.minor = alpha("grey85", 0.3) ) +
+  panel_border() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 11),
+    legend.position = "none") +
+  ylim(0, 16) +
+  geom_text(aes(x = 1.5, y = 16, 
+                label = "+"), 
+            size = 6) +
+  scale_x_discrete(position = "top")
+
+plot_4b1
+
+#### Year 2: ####
+# Set up for figures: 
+## (Top model for year 2 is null model, will show raw data:)
+
+# Filter out for study year 1:
+GHGYr2_Full <- GHG %>%
+  filter(StudyYear == "Year2")
+
+# Transform units to kg/ha/day
+GHGYr2_Full <- GHGYr2_Full %>%
+  mutate(CH4Flux_kg_ha_h = CH4Flux * 0.00057744, # nmol/m2/s -> kg/ha/h
+         CH4Flux_kg_ha_day = CH4Flux_kg_ha_h * 24) # kg/ha/h -> kg/ha/day
+
+results2 <- GHGYr2_Full %>% 
+  group_by(FishTreatment, BirdTreatment, treatment, PlotID) %>% 
+  summarise(
+    auc_total = AUC(x = ElapsedDays, y = CH4Flux_kg_ha_day, method = "trapezoid"),
+    time_range = max(ElapsedDays) - min(ElapsedDays),
+    mean_flux = auc_total / time_range, 
+    .groups = "drop"
+  ) %>% 
+  mutate(FishTreatment = recode(FishTreatment, "NoFish" = "No Fish"))
+
+treatment_order_4b2 <- c("Birds Fish", "NoBirds Fish", "Birds NoFish", "NoBirds NoFish")
+
+treatment_colors_4b2 <- c(
+  "Birds Fish"       = "#1B80ADFF",
+  "NoBirds Fish"     = "#00B398FF",
+  "Birds NoFish"    = "#FF9933FF",
+  "NoBirds NoFish"  = "#C24841FF"
+)
+
+dat4b2 <- results2 %>%
+  mutate(color_group = factor(
+    treatment,
+    levels = treatment_order_4b2))
+
+# Plot: 
+
+plot_4b2 <- ggplot() +
+  geom_jitter(data = dat4b2,
+              aes(x = FishTreatment, y = mean_flux, color = color_group),
+              width = 0.1,
+              alpha = 0.5,
+              size = 2) +
+  labs( 
+    title = "Total Annual Emissions",
+    x = "",
+    y = expression(Cumulative~C~-CH[4]~emissions~(kg~ha^{-1}))
+  ) +
+  theme_minimal_grid(font_size = 13) +
+  background_grid(major = c("xy"),
+                  minor = c("xy"),
+                  color.major = alpha("grey85", 0.4), 
+                  color.minor = alpha("grey85", 0.3) ) +
+  panel_border() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 11),
+    legend.position = "none") +
+  scale_color_manual(values = treatment_colors_4a2, 
+                     name = "Treatment",
+                     labels = c(
+                       "Birds Fish"     = "Fish / Birds",
+                       "NoBirds Fish"   = "Fish / No Birds",
+                       "Birds NoFish"   = "No Fish / Birds",
+                       "NoBirds NoFish" = "No Fish / No Birds"
+                     )) +
+  ylim(0,16) +
+  geom_text(aes(x = 1.5, y = 16, 
+                label = "n.s."), 
+            size = 4) +
+  scale_x_discrete(position = "top")
+
+plot_4b2
+
+#### Cumulative flux ####
+
+#### Year 1: ####
+# Set up datasets: 
+
+GHGYr1_Full <- GHG %>%
+  filter(StudyYear == "Year1")
+
+GHGYr1_Full <- GHGYr1_Full %>%
+  mutate(CH4Flux_kg_ha_h = CH4Flux * 0.00057744,       # nmol/m2/s -> kg/ha/h
+         CH4Flux_kg_ha_day = CH4Flux_kg_ha_h * 24)     # kg/ha/h -> kg/ha/day
+
+# Running cumulative AUC per plot
+cumulative_data1 <- GHGYr1_Full %>%
+  group_by(FishTreatment, BirdTreatment, treatment, PlotID) %>%
+  arrange(ElapsedDays, .by_group = TRUE) %>%
+  mutate(
+    # Trapezoid area between each consecutive pair of points
+    delta_t     = ElapsedDays - lag(ElapsedDays),
+    trap_area   = 0.5 * (CH4Flux_kg_ha_day + lag(CH4Flux_kg_ha_day)) * delta_t,
+    trap_area   = ifelse(is.na(trap_area), 0, trap_area),  # first point = 0
+    cumulative_CH4 = cumsum(trap_area),
+    FishTreatment = recode(FishTreatment, "NoFish" = "No Fish")
+  ) %>%
+  ungroup()
+
+# Create dataframe to add vline for when fish were on fields: 
+
+cumulative_data1$Date = as.Date(cumulative_data1$Date)
+
+ghg_fish_dates1 <- data.frame(
+  fish_days = as.Date(c("2023-12-13", "2024-02-27")))
+
+treatment_colors_4c1 <- c(
+  "Birds Fish"    = "#1B80ADFF",
+  "NoBirds Fish"  = "#00B398FF",  
+  "Birds NoFish"  = "#FF9933FF",  
+  "NoBirds NoFish"= "#C24841FF"
+)
+
+
+# Plot: 
+
+  
+plot_4c1 <- ggplot() +
+  geom_line(data = cumulative_data1,
+            aes(x = Date, y = cumulative_CH4, 
+                color = treatment, group = PlotID),
+            alpha = 0.5, 
+            linewidth = 0.5) +  
+  scale_color_manual(values = treatment_colors_4c1) +
+  new_scale_color() +# individual plots
+  stat_summary(data = cumulative_data1,
+                aes(x = Date, y = cumulative_CH4,
+                    group = FishTreatment,
+                    color = FishTreatment),
+               fun = mean, 
+               geom = "line", 
+               linewidth = 1.5, 
+               alpha = 1) + # treatment means
+  scale_color_manual(values = c("black", "gray50")) +
+  labs(title = "Net Cumulative Annual Emissions",
+       x     = "Date (Month-Yr)",
+       y     = expression(C~-CH[4]~emissions~(kg~ha^{-1}~day^{-1}))) +
+  geom_vline(
+    data = ghg_fish_dates1,
+    aes(xintercept = fish_days),
+    linetype = "dashed",
+    color = "darkgrey"
+  ) +
+  scale_x_date(date_labels = "%b-%y", date_breaks = "2 month") +
+  theme_minimal_grid(font_size = 12) +
+  background_grid(major = c("xy"),
+                  minor = c("xy"),
+                  color.major = alpha("grey85", 0.4), 
+                  color.minor = alpha("grey85", 0.3) ) +
+  panel_border() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 11),
+    legend.position = "none") +
+  ylim(0, 5200)
+
+
+plot_4c1  
+
+
+#### Year 2: ####
+# Set up datasets: 
+
+GHGYr2_Full <- GHG %>%
+  filter(StudyYear == "Year2")
+
+GHGYr2_Full <- GHGYr2_Full %>%
+  mutate(CH4Flux_kg_ha_h = CH4Flux * 0.00057744,       # nmol/m2/s -> kg/ha/h
+         CH4Flux_kg_ha_day = CH4Flux_kg_ha_h * 24)     # kg/ha/h -> kg/ha/day
+
+# Running cumulative AUC per plot
+cumulative_data2 <- GHGYr2_Full %>%
+  group_by(FishTreatment, BirdTreatment, treatment, PlotID) %>%
+  arrange(ElapsedDays, .by_group = TRUE) %>%
+  mutate(
+    # Trapezoid area between each consecutive pair of points
+    delta_t     = ElapsedDays - lag(ElapsedDays),
+    trap_area   = 0.5 * (CH4Flux_kg_ha_day + lag(CH4Flux_kg_ha_day)) * delta_t,
+    trap_area   = ifelse(is.na(trap_area), 0, trap_area),  # first point = 0
+    cumulative_CH4 = cumsum(trap_area),
+    FishTreatment = recode(FishTreatment, "NoFish" = "No Fish")
+  ) %>%
+  ungroup()
+
+# coerce date 
+cumulative_data2$Date = as.Date(cumulative_data2$Date)
+
+# create dataset for vline of when fish were on fields 
+ghg_fish_dates2 <- data.frame(
+  fish_days = as.Date(c("2024-12-08", "2025-02-23")))
+
+treatment_colors_4c2 <- c(
+  "Birds Fish"    = "#1B80ADFF",
+  "NoBirds Fish"  = "#00B398FF",  
+  "Birds NoFish"  = "#FF9933FF",  
+  "NoBirds NoFish"= "#C24841FF"
+)
+
+# Plot:
+
+plot_4c2 <- ggplot() +
+  geom_line(data = cumulative_data2,
+            aes(x = Date, y = cumulative_CH4, 
+                color = treatment, group = PlotID),
+            alpha = 0.5, 
+            linewidth = 0.5) +  
+  scale_color_manual(values = treatment_colors_4c2) +
+  new_scale_color() +# individual plots
+  stat_summary(data = cumulative_data2,
+               aes(x = Date, y = cumulative_CH4,
+                   group = FishTreatment,
+                   color = FishTreatment),
+               fun = mean, 
+               geom = "line", 
+               linewidth = 1.5, 
+               alpha = 1) + # treatment means
+  scale_color_manual(values = c("black", "gray50")) +
+  labs(title = "Net Cumulative Annual Emissions",
+       x     = "Date (Month-Yr)",
+       y     = expression(C~-CH[4]~emissions~(kg~ha^{-1}~day^{-1}))) +
+  geom_vline(
+    data = ghg_fish_dates2,
+    aes(xintercept = fish_days),
+    linetype = "dashed",
+    color = "darkgrey"
+  ) +
+  scale_x_date(date_labels = "%b-%y", date_breaks = "2 month") +
+  theme_minimal_grid(font_size = 12) +
+  background_grid(major = c("xy"),
+                  minor = c("xy"),
+                  color.major = alpha("grey85", 0.4), 
+                  color.minor = alpha("grey85", 0.3) ) +
+  panel_border() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 11),
+    legend.position = "none") +
+  ylim(0, 5200)
+
+plot_4c2  
+
+
+#### Patchwork figure: ####
+
+### Year 1: 
+
+plot_4_1 <- (plot_4a1 | plot_4b1) / plot_4c1
+
+Figure4_1 <- wrap_elements(plot_4_1) +
+  labs(tag = "Year 1") +
+  theme(
+    plot.tag = element_text(size = 16),
+    plot.tag.position = "top"
+  )
+
+Figure4_1
+
+### Year 2: 
+
+plot_4_2 <- (plot_4a2 | plot_4b2) / plot_4c2
+
+Figure4_2 <- wrap_elements(plot_4_2) +
+  labs(tag = "Year 2") +
+  theme(
+    plot.tag = element_text(size = 16),
+    plot.tag.position = "top"
+  )
+
+Figure4_2
+
+Figure4a <- Figure4_1 | Figure4_2
+
+#### Create legends below the plot: 
+
+# Dummy plot 1: line legend (Fish = black, No Fish = gray)
+line_legend_plot <- ggplot(
+  data.frame(x = 1, y = 1, group = factor(c("Fish", "No Fish"), 
+                                          levels = c("Fish", "No Fish"))),
+  aes(x = x, y = y, color = group)) +
+  geom_line(linewidth = 1.2) +
+  scale_color_manual(values = c("Fish" = "black", "No Fish" = "gray50"),
+                     name = "") +
+  guides(color = guide_legend(
+    nrow = 1,
+    override.aes = list(shape = NA, linewidth = 1.2))) +
+  theme_void() +
+  theme(legend.position = "bottom",
+        legend.title = element_blank())
+
+# Dummy plot 2: dot legend (your four treatments)
+treatment_colors <- c(
+  "Birds Fish"       = "#1B80ADFF",
+  "NoBirds Fish"     = "#00B398FF",
+  "Birds NoFish"    = "#FF9933FF",
+  "NoBirds NoFish"  = "#C24841FF"
+)
+
+dot_legend_plot <- ggplot(
+  data.frame(x = 1, y = 1, 
+             group = factor(c("Birds Fish", "NoBirds Fish", "Birds NoFish", "NoBirds NoFish"),
+                            levels = c("Birds Fish", "NoBirds Fish", "Birds NoFish", "NoBirds NoFish"))),
+  aes(x = x, y = y, color = group)) +
+  geom_point(size = 3) +
+  scale_color_manual(values = treatment_colors,
+                     labels = c(
+                       "Birds Fish"     = "Fish / Birds",
+                       "NoBirds Fish"   = "Fish / No Birds",
+                       "Birds NoFish"   = "No Fish / Birds",
+                       "NoBirds NoFish" = "No Fish / No Birds"),
+                     name = "") +
+  guides(color = guide_legend(
+    nrow = 1,
+    override.aes = list(shape = 16, size = 3, alpha = 1,
+                        linetype = 0, linewidth = 0))) +
+  theme_void() +
+  theme(legend.position = "bottom",
+        legend.title = element_blank())
+
+# Extract legends
+line_leg <- get_legend(line_legend_plot)
+dot_leg  <- get_legend(dot_legend_plot)
+
+# Stack legends and combine with main patchwork
+Figure4 <- Figure4a /  
+  wrap_elements(full = line_leg) /
+  wrap_elements(full = dot_leg) +
+  plot_layout(heights = c(12, 0.1, 0.1))
+
+Figure4
+
+# Export figure 
+
+# Save figure: 
+ggsave("figures/Figure_4.png", 
+       plot = Figure4,
+       width = 30, 
+       height = 25, 
+       dpi = 300,
+       units = "cm")
+
 
 
 
