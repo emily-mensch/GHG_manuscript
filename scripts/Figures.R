@@ -20,6 +20,7 @@ library(ggnewscale)
 library(sf)
 library(rnaturalearth)
 library(rnaturalearthhires)
+library(devtools)
 
 # Load data ---------------------------------------------------------------
 daphnia <- read.csv("data/DaphniaFull.csv") # Full daphnia dataset
@@ -31,12 +32,32 @@ GHG_Yr1 <- read.csv("data/GHG_Yr1_winter.csv") # Winter flooding methane dataset
 GHG_Yr2 <- read.csv("data/GHG_Yr2_winter.csv") # Winter flooding methane dataset year 2
 GHG <- read.csv("data/GHG_ALL.csv") # full GHG dataset 
 
-
 # Figure 1 ----------------------------------------------------------------
 
 ## Creating map of study site: 
 # Get US states, then filter to CA: 
 us_states <- ne_states(country = "United States of America", returnclass = "sf")
+california <- us_states[us_states$name == "California", ]
+
+# Create bounding box w/ lon/lat coordinates of study region: 
+study_box <- data.frame(
+  xmin = -121.6,
+  xmax = -121.2,
+  ymin = 38.8,
+  ymax = 38.4
+)
+
+# Build the map
+ca_inset <- ggplot() +
+  geom_sf(data = california, fill = "black", color = NA) +
+  geom_rect(
+    data = study_box,
+    aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+    fill = "red", color = "red", alpha = 0.3
+  ) +
+  theme_void()  # strips axes/gridlines, like your example
+
+ca_inset
 
 # Figure 2 ----------------------------------------------------------------
 

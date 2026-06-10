@@ -16,8 +16,10 @@ library(emmeans)
 library(ggeffects)
 library(DescTools)
 
-
 # Load data ---------------------------------------------------------------
+zoop <- read.csv("data/TotalZoop.csv") # Full zooplankton dataset
+totalzoop1 <- read.csv("data/totalzoop1.csv") # Total zoop dataset year 1
+totalzoop2 <- read.csv("data/totalzoop2.csv") # Total zoop dataset year 2
 daphnia <- read.csv("data/DaphniaFull.csv") # Full daphnia dataset
 totaldaphnia1 <- read.csv("data/totaldaphnia1.csv") # Total daphnia dataset year 1
 totaldaphnia2 <- read.csv("data/totaldaphnia2.csv") # Total daphnia dataset year 2
@@ -30,8 +32,221 @@ GHG_Yr2 <- read.csv("data/GHG_Yr2_winter.csv") # Winter flooding methane dataset
 hobo_summary <- read.csv("data/hobo_summary.csv") # Full water temperature/dissolved oxygen dataset 
 depth <- read.csv("data/depth_summary.csv") # Full depth dataset 
 
-# Model set 1: Daphnia Abundance ------------------------------------------
+# Model set 1: Zooplankton Abundance ------------------------------------------
 
+#### Zooplankton ####
+#### Year 1 ####
+# Most-complex model: 
+ZoopYr1_M1 <- glmmTMB(
+  DensityRounded ~ FishTreatment * BirdTreatment * Pre_Post +
+    MeanTempScaled + MeanDOScaled + MeanDepthScaled +
+    (1 | PlotID ) + (1 | SamplingOccasion),
+  family = nbinom2,
+  data = totalzoop1
+)
+# Check model diagnostics: 
+simOutput_ZoopYr1 <- simulateResiduals(fittedModel = ZoopYr1_M1)
+plot(simOutput_ZoopYr1)
+check_collinearity(ZoopYr1_M1)
+check_overdispersion(ZoopYr1_M1)
+
+# Drop 3-way interaction: 
+ZoopYr1_M2 <- glmmTMB(
+  DensityRounded ~ (FishTreatment * Pre_Post) + (BirdTreatment * Pre_Post) + (FishTreatment*BirdTreatment) +
+    MeanTempScaled + MeanDOScaled + MeanDepthScaled +
+    (1 | PlotID ) + (1 | SamplingOccasion),
+  family = nbinom2,
+  data = totalzoop1
+)
+summary(ZoopYr1_M2)
+
+anova(ZoopYr1_M1, ZoopYr1_M2) # chi-squared test not significant
+
+# Drop bird/fish interaction:
+ZoopYr1_M3 <- glmmTMB(
+  DensityRounded ~ (FishTreatment * Pre_Post) + (BirdTreatment * Pre_Post) +
+    MeanTempScaled + MeanDOScaled + MeanDepthScaled +
+    (1 | PlotID ) + (1 | SamplingOccasion),
+  family = nbinom2,
+  data = totalzoop1
+)
+summary(ZoopYr1_M3)
+
+anova(ZoopYr1_M2, ZoopYr1_M3) # chi-squared test not significant 
+
+# Drop bird/PrePost interaction: 
+ZoopYr1_M4 <- glmmTMB(
+  DensityRounded ~ (FishTreatment * Pre_Post) + BirdTreatment +
+    MeanTempScaled + MeanDOScaled + MeanDepthScaled +
+    (1 | PlotID ) + (1 | SamplingOccasion),
+  family = nbinom2,
+  data = totalzoop1
+)
+summary(ZoopYr1_M4)
+
+anova(ZoopYr1_M3, ZoopYr1_M4) # chi-squared test not significant 
+
+# Drop bird treatment: 
+ZoopYr1_M5 <- glmmTMB(
+  DensityRounded ~ FishTreatment * Pre_Post + 
+    MeanTempScaled + MeanDOScaled + MeanDepthScaled +
+    (1 | PlotID ) + (1 | SamplingOccasion),
+  family = nbinom2,
+  data = totalzoop1
+)
+summary(ZoopYr1_M5) 
+
+anova(ZoopYr1_M4, ZoopYr1_M5) # chi-squared test not significant 
+
+# Drop fish/PrePost interaction: 
+ZoopYr1_M6 <- glmmTMB(
+  DensityRounded ~ FishTreatment + Pre_Post + 
+    MeanTempScaled + MeanDOScaled + MeanDepthScaled +
+    (1 | PlotID ) + (1 | SamplingOccasion),
+  family = nbinom2,
+  data = totalzoop1
+)
+summary(ZoopYr1_M6) 
+
+anova(ZoopYr1_M5, ZoopYr1_M6) # chi-squared test not significant
+
+# Drop PrePost:
+ZoopYr1_M7 <- glmmTMB(
+  DensityRounded ~ FishTreatment + 
+    MeanTempScaled + MeanDOScaled + MeanDepthScaled +
+    (1 | PlotID ) + (1 | SamplingOccasion),
+  family = nbinom2,
+  data = totalzoop1
+)
+summary(ZoopYr1_M7)
+
+anova(ZoopYr1_M6, ZoopYr1_M7) # chi-squared test marginaly significant   
+
+# Null model: 
+ZoopYr1_M8 <- glmmTMB(
+  DensityRounded ~ 
+    MeanTempScaled + MeanDOScaled + MeanDepthScaled +
+    (1 | PlotID ) + (1 | SamplingOccasion),
+  family = nbinom2,
+  data = totalzoop1
+)
+summary(ZoopYr1_M8)
+
+anova(ZoopYr1_M7, ZoopYr1_M8) # chi-squared test not significant 
+
+## Model diagnostics for top model, M6: 
+simOutput_ZoopYr1_M6 <- simulateResiduals(fittedModel = ZoopYr1_M6)
+plot(simOutput_ZoopYr1_M6) # diagnostics are better than complex model
+check_collinearity(ZoopYr1_M6)
+check_overdispersion(ZoopYr1_M6)
+
+
+#### Year 2 ####
+# Most-complex model: 
+ZoopYr2_M1 <- glmmTMB(
+  DensityRounded ~ FishTreatment * BirdTreatment * Pre_Post +
+    MeanTempScaled + MeanDOScaled + MeanDepthScaled +
+    (1 | PlotID ) + (1 | SamplingOccasion),
+  family = nbinom2,
+  data = totalzoop2
+)
+# Check model diagnostics: 
+simOutput_ZoopYr2 <- simulateResiduals(fittedModel = ZoopYr2_M1)
+plot(simOutput_ZoopYr2)
+check_collinearity(ZoopYr2_M1)
+check_overdispersion(ZoopYr2_M1)
+
+# Drop 3-way interaction: 
+ZoopYr2_M2 <- glmmTMB(
+  DensityRounded ~ (FishTreatment * Pre_Post) + (BirdTreatment * Pre_Post) + (FishTreatment*BirdTreatment) +
+    MeanTempScaled + MeanDOScaled + MeanDepthScaled +
+    (1 | PlotID ) + (1 | SamplingOccasion),
+  family = nbinom2,
+  data = totalzoop2
+)
+summary(ZoopYr2_M2)
+
+anova(ZoopYr2_M1, ZoopYr2_M2) # chi-squared test significant
+
+# Drop bird/fish interaction:
+ZoopYr2_M3 <- glmmTMB(
+  DensityRounded ~ (FishTreatment * Pre_Post) + (BirdTreatment * Pre_Post) +
+    MeanTempScaled + MeanDOScaled + MeanDepthScaled +
+    (1 | PlotID ) + (1 | SamplingOccasion),
+  family = nbinom2,
+  data = totalzoop2
+)
+summary(ZoopYr2_M3)
+
+anova(ZoopYr2_M2, ZoopYr2_M3) # chi-squared test not significant 
+
+# Drop bird/PrePost interaction: 
+ZoopYr2_M4 <- glmmTMB(
+  DensityRounded ~ (FishTreatment * Pre_Post) + BirdTreatment +
+    MeanTempScaled + MeanDOScaled + MeanDepthScaled +
+    (1 | PlotID ) + (1 | SamplingOccasion),
+  family = nbinom2,
+  data = totalzoop2
+)
+summary(ZoopYr2_M4)
+
+anova(ZoopYr2_M3, ZoopYr2_M4) # chi-squared test not significant 
+
+# Drop bird treatment: 
+ZoopYr2_M5 <- glmmTMB(
+  DensityRounded ~ FishTreatment * Pre_Post + 
+    MeanTempScaled + MeanDOScaled + MeanDepthScaled +
+    (1 | PlotID ) + (1 | SamplingOccasion),
+  family = nbinom2,
+  data = totalzoop2
+)
+summary(ZoopYr2_M5) 
+
+anova(ZoopYr2_M4, ZoopYr2_M5) # chi-squared test not significant 
+
+# Drop fish/PrePost interaction: 
+ZoopYr2_M6 <- glmmTMB(
+  DensityRounded ~ FishTreatment + Pre_Post + 
+    MeanTempScaled + MeanDOScaled + MeanDepthScaled +
+    (1 | PlotID ) + (1 | SamplingOccasion),
+  family = nbinom2,
+  data = totalzoop2
+)
+summary(ZoopYr2_M6) 
+
+anova(ZoopYr2_M5, ZoopYr2_M6) # chi-squared test significant
+
+# Drop PrePost:
+ZoopYr2_M7 <- glmmTMB(
+  DensityRounded ~ FishTreatment + 
+    MeanTempScaled + MeanDOScaled + MeanDepthScaled +
+    (1 | PlotID ) + (1 | SamplingOccasion),
+  family = nbinom2,
+  data = totalzoop2
+)
+summary(ZoopYr2_M7)
+
+anova(ZoopYr2_M6, ZoopYr2_M7) # chi-squared test significant   
+
+# Null model: 
+ZoopYr2_M8 <- glmmTMB(
+  DensityRounded ~ 
+    MeanTempScaled + MeanDOScaled + MeanDepthScaled +
+    (1 | PlotID ) + (1 | SamplingOccasion),
+  family = nbinom2,
+  data = totalzoop2
+)
+summary(ZoopYr2_M8)
+
+anova(ZoopYr2_M7, ZoopYr2_M8) # chi-squared test not significant 
+
+## Model diagnostics for top model, M5: 
+simOutput_ZoopYr2_M6 <- simulateResiduals(fittedModel = ZoopYr2_M6)
+plot(simOutput_ZoopYr2_M6) # diagnostics are better than complex model
+check_collinearity(ZoopYr2_M6)
+check_overdispersion(ZoopYr2_M6)
+
+#### Daphnia ####
 ## Iterative framework: beginning with most complex/biologically relevant model and iteratively simplifying 
 
 #### Year 1: Full dataset ####
@@ -49,7 +264,6 @@ DaphniaYr1_M1 <- glmmTMB(
 summary(DaphniaYr1_M1)
 
 # Check model diagnostics: 
-# Assumptions: Linearity, normality of residuals:
 simOutput_DaphniaYr1 <- simulateResiduals(fittedModel = DaphniaYr1_M1)
 plot(simOutput_DaphniaYr1)
 check_collinearity(DaphniaYr1_M1)
